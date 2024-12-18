@@ -1,9 +1,10 @@
 #include <iostream>
 #include <string>
 using namespace std;
+
 struct Student {
 	string name;
-	float score;
+	float score = 0;
 };
 
 
