@@ -1,7 +1,11 @@
 #include <iostream>
+#include <fstream>
+#include <cstring>
 using namespace std;
 
+#define MAX_LENGTH 100
 #define MAX_STRING_LENGTH 50
+
 
 enum RequestStatus {
 	PENDING,
@@ -18,11 +22,9 @@ struct Request {
 	char issueDescription[MAX_STRING_LENGTH]{ '0' };
 	char technicianName[MAX_STRING_LENGTH]{ "PENDING" };
 	char repairDetails[MAX_STRING_LENGTH]{ "PENDING" };
-	float repairCost  = 0;
+	float repairCost = 0;
 	RequestStatus status;
 };
-
-
 
 void DisplayDevices(Request reqArray[], int const requestsToFind)
 {
@@ -169,7 +171,7 @@ int InputCommand(int& c)
 	return c;
 }
 
-void InputRequest(int& inputtedRequests, Request reqArray[])
+void InputRequest(Request reqArray[], int& inputtedRequests)
 {
 	int n = 0;
 
@@ -213,8 +215,8 @@ void InputRequest(int& inputtedRequests, Request reqArray[])
 
 
 		cout << "Technician Name is pending. " << endl;
-		cout << "Repair Details are pending. "<< endl;
-		cout << "Repair Cost is pending. "<<endl;
+		cout << "Repair Details are pending. " << endl;
+		cout << "Repair Cost is pending. " << endl;
 
 		/*
 		int statusInput;
@@ -244,12 +246,112 @@ void InputRequest(int& inputtedRequests, Request reqArray[])
 	}
 }
 
+void SortByDate(Request reqArray[], int const inputtedRequests)
+{
+	//TODO
+}
+
+void ImportAndExportBinaryFileAutomatically(Request reqArray[], int const inputtedRequests)
+{
+	if (inputtedRequests == 0)
+	{
+		ifstream input_file("requests.data", ios::binary);
+		if (!input_file.is_open()) {
+			cerr << "Error opening file for reading." << endl;
+		}
+		streamsize file_size = input_file.tellg();
+		input_file.seekg(0, ios::beg);
+
+		int requestCount = file_size / sizeof(Request);
+
+		if (requestCount == 0) {
+			cerr << "No data in file or file size mismatch." << endl;
+			input_file.close();
+		}
+
+
+
+		input_file.read(reinterpret_cast<char*>(reqArray), file_size);
+		if (!input_file) {
+			cerr << "Error reading data from file." << endl;
+			input_file.close();
+		}
+
+		input_file.close();
+		cout << "Data successfully imported from file." << endl;
+	}
+	else
+	{
+		fstream output_file("requests.data", ios::binary, ios::app);
+		if (output_file.is_open())
+		{
+			for (int i = 0; i < inputtedRequests; i++)
+			{
+				output_file.write((char*)&reqArray[i], sizeof(reqArray[i]));
+			}
+			output_file.close();
+			cout << "Data successfully exported to file." << endl;
+		}
+		else
+		{
+			cerr << "Error opening file for writing." << endl;
+		}
+	}
+}
+
+void ImportAndExportBinaryFile(Request reqArray[], int const inputtedRequests, bool automaticSaveAndRead)
+{
+	if (true)
+	{
+		fstream output_file("requests.data", ios::binary, ios::app);
+		if (output_file.is_open())
+		{
+			for (int i = 0; i < inputtedRequests; i++)
+			{
+				output_file.write((char*)&reqArray[i], sizeof(reqArray[i]));
+			}
+			output_file.close();
+			cout << "Data successfully exported to file." << endl;
+		}
+		else
+		{
+			cerr << "Error opening file for writing." << endl;
+		}
+	}
+	else 
+	{
+		ifstream input_file("requests.data", ios::binary);
+		if (!input_file.is_open()) {
+			cerr << "Error opening file for reading." << endl;
+		}
+		streamsize file_size = input_file.tellg();
+		input_file.seekg(0, ios::beg);
+
+		int requestCount = file_size / sizeof(Request);
+
+		if (requestCount == 0) {
+			cerr << "No data in file or file size mismatch." << endl;
+			input_file.close();
+		}
+
+		input_file.read(reinterpret_cast<char*>(reqArray), file_size);
+		if (!input_file) {
+			cerr << "Error reading data from file." << endl;
+			input_file.close();
+		}
+
+		input_file.close();
+		cout << "Data successfully imported from file." << endl;
+	}
+}
+
 int main()
 {
 	PrintMenu();
 	const int MAX_REQUESTS = 100;
 	Request reqArray[MAX_REQUESTS];
 	int inputtedRequests = 0;
+	//ImportAndExportBinaryFileAutomatically(reqArray, inputtedRequests);
 	int command;
 	do
 	{
@@ -263,14 +365,15 @@ int main()
 		{
 			switch (command)
 			{
-			case 1: InputRequest(inputtedRequests, reqArray); break;
+			case 1: InputRequest(reqArray, inputtedRequests); break;
 			case 2: DisplayDevices(reqArray, inputtedRequests); break;
 			case 3: SearchForRequest(reqArray, inputtedRequests); break;
-			case 4: break;
-			case 5: break;
+			case 4: /*sort by date*/break;
+			case 5: ImportAndExportBinaryFile(reqArray, inputtedRequests, false); break;
 			case 6: CompleteRequest(reqArray, inputtedRequests); break;
 			case 7: break;
 			}
 		}
 	} while (command != 8);
+	ImportAndExportBinaryFileAutomatically(reqArray, inputtedRequests);
 }
