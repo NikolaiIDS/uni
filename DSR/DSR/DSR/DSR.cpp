@@ -218,8 +218,8 @@ void InputRequest(int& inputtedRequests, Request reqArray[])
 
 		/*
 		int statusInput;
-
 		bool fine = false;
+
 		do
 		{
 			cout << "Enter Status (0 for PENDING, 1 for REJECTED, 2 for COMPLETED): ";
