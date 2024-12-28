@@ -1,11 +1,17 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <stdio.h>
 using namespace std;
 
 #define MAX_LENGTH 100
 #define MAX_STRING_LENGTH 50
 
+enum RequestType {
+	NORMAL,
+	FAST,
+	EXPRESS
+};
 
 enum RequestStatus {
 	PENDING,
@@ -23,10 +29,22 @@ struct Request {
 	char technicianName[MAX_STRING_LENGTH]{ "PENDING" };
 	char repairDetails[MAX_STRING_LENGTH]{ "PENDING" };
 	float repairCost = 0;
+
 	RequestStatus status;
+	RequestType type;
 };
 
-void DisplayDevices(Request reqArray[], int const requestsToFind)
+const char deviceTypes[10][MAX_STRING_LENGTH] = {
+	"Laptop", "Phone", "Tablet", "Desktop", "Smartwatch",
+	"Printer", "Router", "Camera", "Monitor", "Keyboard"
+};
+
+const char issueDescriptions[10][MAX_STRING_LENGTH] = {
+	"Screen not working", "Battery issue", "Overheating", "Software crash", "Hardware failure",
+	"Network issue", "Slow performance", "No power", "Sound issue", "Keyboard malfunction"
+};
+
+void DisplayDevices(Request const reqArray[], int const requestsToFind)
 {
 	for (int i = 0; i < requestsToFind; i++)
 	{
@@ -39,6 +57,7 @@ void DisplayDevices(Request reqArray[], int const requestsToFind)
 		cout << "Technician Name: " << reqArray[i].technicianName << endl;
 		cout << "Repair Details: " << reqArray[i].repairDetails << endl;
 		cout << "Repair Cost: " << reqArray[i].repairCost << endl;
+
 		cout << "Status: ";
 		if (reqArray[i].status == 0)
 		{
@@ -52,6 +71,20 @@ void DisplayDevices(Request reqArray[], int const requestsToFind)
 		{
 			cout << "COMPLETED" << endl;
 		}
+
+		cout << "Request type: ";
+		if (reqArray[i].status == 0)
+		{
+			cout << "NORMAL" << endl;
+		}
+		else if (reqArray[i].status == 1)
+		{
+			cout << "FAST" << endl;
+		}
+		else if (reqArray[i].status == 2)
+		{
+			cout << "EXPRESS" << endl;
+		}
 		cout << "----------------------------------" << endl;
 	}
 }
@@ -59,21 +92,78 @@ void DisplayDevices(Request reqArray[], int const requestsToFind)
 void CompleteRequest(Request reqArray[], int const inputtedRequests)
 {
 	int requestNumber;
+	DisplayDevices(reqArray, inputtedRequests);
 	cout << "Enter the request number you want to complete: ";
 	cin >> requestNumber;
 	for (int i = 0; i < inputtedRequests; i++)
 	{
 		if (reqArray[i].requestNumber == requestNumber)
 		{
+			if (reqArray[i].status == 0)
+			{
+				cout << "To COMPLETE request (0). To REJECT request (1); ";
 
-			cout << "Enter Technician Name: ";
-			cin.getline(reqArray[i].technicianName, MAX_STRING_LENGTH);
+				int input;
+				do
+				{
+					cin.ignore();
+					cin >> input;
+					if (cin.fail() || input > 2 || input < 0)
+					{
+						cout << "Wrong input please try again: To COMPLETE request (0). To REJECT request (1): ";
+					}
+					else break;
+				} while (true);
 
-			cout << "Enter Repair Details: ";
-			cin.getline(reqArray[i].repairDetails, MAX_STRING_LENGTH);
+				if (input == 1)
+				{
+					reqArray[i].status = static_cast<RequestStatus>(1);
+					cout << "Request successfully REJECTED." << endl;
+					return;
+				}
+				else
+				{
+					cout << "Enter Technician Name: ";
+					cin.ignore();
+					cin.getline(reqArray[i].technicianName, MAX_STRING_LENGTH);
 
-			cout << "Enter Repair Cost: ";
-			cin >> reqArray[i].repairCost;
+					cout << "Enter Repair Details: ";
+					cin.ignore();
+					cin.getline(reqArray[i].repairDetails, MAX_STRING_LENGTH);
+
+					do
+					{
+						cout << "Enter Repair Cost before type calculation: ";
+						cin >> reqArray[i].repairCost;
+						if (cin.fail())
+						{
+							cout << "Try again please." << endl;
+						}
+						else break;
+					} while (true);
+
+					if (reqArray[i].type == 0)
+					{
+						cout << "Final price is: " << reqArray[i].repairCost << "because request type is NORMAL" << endl;
+					}
+					else if (reqArray[i].type == 1)
+					{
+						reqArray[i].repairCost += reqArray[i].repairCost / 5;
+						cout << "Final price is: " << reqArray[i].repairCost << "because request type is FAST" << endl;
+					}
+					else
+					{
+						reqArray[i].repairCost += reqArray[i].repairCost / 2;
+						cout << "Final price is: " << reqArray[i].repairCost << "because request type is EXPRESS" << endl;
+					}
+
+					reqArray[i].status = static_cast<RequestStatus>(2);
+					cout << "Request successfully completed." << endl;
+					return;
+				}
+			}
+			else cout << "Request has either been COMPLETED or REJECTED" << endl;
+			return;
 		}
 	}
 	cout << "Request number " << requestNumber << " not found." << endl;
@@ -158,15 +248,16 @@ void PrintMenu()
 	cout << "3: Search for device." << endl;
 	cout << "4: Sort and display requests." << endl;
 	cout << "5: External files." << endl;
-	cout << "6: Update request." << endl;
+	cout << "6: Complete request." << endl;
 	cout << "7: Additional request information." << endl;
-	cout << "8: Exit." << endl;
+	cout << "8: Clear console." << endl;
+	cout << "9: Exit." << endl;
 	cout << "----------------------------------" << endl;
 }
 
 int InputCommand(int& c)
 {
-	cout << "Please input command from 1 to 8." << endl;
+	cout << "Please input command from 1 to 9." << endl;
 	cin >> c;
 	return c;
 }
@@ -194,44 +285,66 @@ void InputRequest(Request reqArray[], int& inputtedRequests)
 
 	for (int i = 0; i < n; i++)
 	{
-
-		reqArray[i + inputtedRequests].requestNumber = inputtedRequests + 1;
-		cout << "Request Number is: " << reqArray[i + inputtedRequests].requestNumber << endl;
+		cin.ignore();
+		cout << "";
+		reqArray[inputtedRequests].requestNumber = inputtedRequests + 1;
+		cout << "Request Number is: " << reqArray[inputtedRequests].requestNumber << endl;
 
 		cout << "Enter Date (DD-MM-YYYY): ";
-		cin.ignore();
-		cin.getline(reqArray[i + inputtedRequests].date, MAX_STRING_LENGTH);
+		cin.getline(reqArray[inputtedRequests].date, MAX_STRING_LENGTH);
 
 		cout << "Enter Client Name: ";
-		cin.getline(reqArray[i + inputtedRequests].clientName, MAX_STRING_LENGTH);
+		cin.getline(reqArray[inputtedRequests].clientName, MAX_STRING_LENGTH);
 
-		cout << "Enter Device Type (e.g., Laptop, Phone): ";
-		cin.getline(reqArray[i + inputtedRequests].deviceType, MAX_STRING_LENGTH);
+		for (int j = 0; j < 10; j++)
+		{
+			cout << j + 1 << ": " << deviceTypes[j] << endl;
+		}
+		int deviceTypeIndex;
+		cout << "Select Device Type: ";
+		cin >> deviceTypeIndex;
+		deviceTypeIndex--;
+		while (deviceTypeIndex < 0 || deviceTypeIndex >= 10 || cin.fail())
+		{
+			cout << "Invalid selection. Please select a valid device type index: ";
+			cin >> deviceTypeIndex;
+		}
+		strcpy_s(reqArray[inputtedRequests].deviceType, deviceTypes[deviceTypeIndex]);
 
 		cout << "Enter Serial Number: ";
-		cin.getline(reqArray[i + inputtedRequests].serialNumber, MAX_STRING_LENGTH);
+		cin.ignore();
+		cin.getline(reqArray[inputtedRequests].serialNumber, MAX_STRING_LENGTH);
 
-		cout << "Enter Issue Description: ";
-		cin.getline(reqArray[i + inputtedRequests].issueDescription, MAX_STRING_LENGTH);
-
+		for (int j = 0; j < 10; j++)
+		{
+			cout << j + 1 << ": " << issueDescriptions[j] << endl;
+		}
+		int issueDescriptionIndex;
+		cout << "Select Issue Description: ";
+		cin >> issueDescriptionIndex;
+		issueDescriptionIndex--;
+		while (issueDescriptionIndex < 0 || issueDescriptionIndex >= 10 || cin.fail())
+		{
+			cout << "Invalid selection. Please select a valid issue description index: ";
+			cin >> issueDescriptionIndex;
+		}
+		strcpy_s(reqArray[inputtedRequests].issueDescription, issueDescriptions[issueDescriptionIndex]);
 
 		cout << "Technician Name is pending. " << endl;
 		cout << "Repair Details are pending. " << endl;
 		cout << "Repair Cost is pending. " << endl;
 
-		/*
-		int statusInput;
+		int typeInput;
 		bool fine = false;
-
 		do
 		{
-			cout << "Enter Status (0 for PENDING, 1 for REJECTED, 2 for COMPLETED): ";
+			cout << "Enter Status (0 for NORMAL, 1 for FAST, 2 for EXPRESS): ";
 			cin.ignore();
 
-			cin >> statusInput;
-			if (statusInput > 2 || statusInput < 0)
+			cin >> typeInput;
+			if (typeInput > 2 || typeInput < 0)
 			{
-				cout << "Wrong input! Try Again: (0 for PENDING, 1 for REJECTED, 2 for COMPLETED): ";
+				cout << "Wrong input! Try Again: (0 for NORMAL, 1 for FAST, 2 for EXPRESS): ";
 			}
 			else
 			{
@@ -240,23 +353,41 @@ void InputRequest(Request reqArray[], int& inputtedRequests)
 		} while (fine == false);
 		cin.ignore();
 
-		reqArray[i].status = static_cast<RequestStatus>(statusInput);*/
-		reqArray[i + inputtedRequests].status = static_cast<RequestStatus>(0);
-		cout << "\nRequest data successfully entered!" << endl;
+		reqArray[inputtedRequests].type = static_cast<RequestType>(typeInput);
+		reqArray[inputtedRequests].status = static_cast<RequestStatus>(0);
+		cout << "\nRequest data successfully entered!\n\n" << "----------------------------------" << endl;
 		inputtedRequests += 1;
 	}
 }
 
 void SortByDate(Request reqArray[], int const inputtedRequests)
 {
-	//TODO
+	auto parseDate = [](const char* date, int& day, int& month, int& year) {
+		sscanf_s(date, "%d-%d-%d", &day, &month, &year);
+		};
+
+	for (int i = 0; i < inputtedRequests - 1; ++i) {
+		for (int j = 0; j < inputtedRequests - i - 1; ++j) {
+			int day1, month1, year1;
+			int day2, month2, year2;
+			parseDate(reqArray[j].date, day1, month1, year1);
+			parseDate(reqArray[j + 1].date, day2, month2, year2);
+
+			if (year1 > year2 || (year1 == year2 && month1 > month2) || (year1 == year2 && month1 == month2 && day1 > day2)) {
+				Request temp = reqArray[j];
+				reqArray[j] = reqArray[j + 1];
+				reqArray[j + 1] = temp;
+			}
+		}
+	}
+	DisplayDevices(reqArray, inputtedRequests);
 }
 
 void ImportAndExportBinaryFileAutomatically(Request reqArray[], int& inputtedRequests, bool end)
 {
 	if (end == false)
 	{
-		ifstream input_file("requests.dat", ios::binary | ios::ate);
+		ifstream input_file("requestsPermanent.dat", ios::binary | ios::ate);
 		if (!input_file.is_open()) {
 			cerr << "Error opening file for reading." << endl;
 			return;
@@ -282,11 +413,10 @@ void ImportAndExportBinaryFileAutomatically(Request reqArray[], int& inputtedReq
 		input_file.close();
 		cout << "Data successfully imported from file." << endl;
 		inputtedRequests += requestCount;
-
 	}
 	else
 	{
-		ofstream output_file("requests.dat", ios::binary);
+		ofstream output_file("requestsPermanent.dat", ios::binary);
 		if (output_file.is_open())
 		{
 			for (int i = 0; i < inputtedRequests; i++)
@@ -366,6 +496,98 @@ void ImportAndExportBinaryFile(Request reqArray[], int& inputtedRequests)
 	}
 }
 
+void SortByDeviceType(Request reqArray[], int const inputtedRequests)
+{
+	Request sortedRequests[MAX_LENGTH];
+	for (int i = 0; i < inputtedRequests; ++i) {
+		sortedRequests[i] = reqArray[i];
+	}
+	for (int i = 0; i < inputtedRequests - 1; ++i) {
+		for (int j = 0; j < inputtedRequests - i - 1; ++j) {
+			if (strcmp(sortedRequests[j].deviceType, sortedRequests[j + 1].deviceType) < 0) {
+				Request temp = sortedRequests[j];
+				sortedRequests[j] = sortedRequests[j + 1];
+				sortedRequests[j + 1] = temp;
+			}
+		}
+	}
+}
+
+void AdditionalRequestInformation(Request reqArray[], int& inputtedRequests)
+{
+	cout << "To displaying completed requests for certain technician (0). \n To display all requests with a certain issue for a certain device (1)\n: ";
+	cin.ignore();
+	int command;
+	do
+	{
+		cin >> command;
+		if (command > 1 || command < 0 || cin.fail())
+		{
+			cout << "Wrong Command. Please try again. To displaying completed requests for certain technician (0). \n To display all requests with a certain issue for a certain device (1)\n: ";
+		}
+		else break;
+	} while (true);
+
+	if (command == 1)
+	{
+		char searchDevice[MAX_STRING_LENGTH];
+		cout << "Enter a device type substring to search for: ";
+		cin.ignore();
+		cin.getline(searchDevice, MAX_STRING_LENGTH);
+		char searchIssue[MAX_STRING_LENGTH];
+		cout << "Enter an issue description substring to search for: ";
+		cin.ignore();
+		cin.getline(searchIssue, MAX_STRING_LENGTH);
+		Request filteredRequests[MAX_LENGTH];
+		int filteredCount = 0;
+		for (int i = 0; i < inputtedRequests; ++i)
+		{
+			if (strstr(reqArray[i].deviceType, searchDevice) != nullptr && strstr(reqArray[i].issueDescription, searchIssue) != nullptr)
+			{
+				filteredRequests[filteredCount++] = reqArray[i];
+			}
+		}
+		SortByDeviceType(filteredRequests, filteredCount);
+		DisplayDevices(filteredRequests, filteredCount);
+	}
+	else
+		if (command == 0)
+		{
+			Request completedRequests[MAX_LENGTH];
+			int completedCount = 0;
+
+			for (int i = 0; i < inputtedRequests; ++i)
+			{
+				if (reqArray[i].status == COMPLETED)
+				{
+					completedRequests[completedCount++] = reqArray[i];
+				}
+			}
+
+			cout << "Technician Names for Completed Requests:" << endl;
+			for (int i = 0; i < completedCount; ++i)
+			{
+				cout << completedRequests[i].technicianName << endl;
+			}
+
+			char searchTechnician[MAX_STRING_LENGTH];
+			cout << "Enter a technician name substring to search for: ";
+			cin.ignore();
+			cin.getline(searchTechnician, MAX_STRING_LENGTH);
+
+			Request filteredRequests[MAX_LENGTH];
+			int filteredCount = 0;
+			for (int i = 0; i < completedCount; ++i)
+			{
+				if (strstr(completedRequests[i].technicianName, searchTechnician) != nullptr)
+				{
+					filteredRequests[filteredCount++] = completedRequests[i];
+				}
+			}
+			SortByDate(filteredRequests, filteredCount);
+		}
+}
+
 int main()
 {
 	PrintMenu();
@@ -378,7 +600,7 @@ int main()
 	{
 		command = InputCommand(command);
 
-		if (command < 1 || command > 8)
+		if (command < 1 || command > 9)
 		{
 			cout << "Wrong command!" << endl;
 		}
@@ -389,12 +611,13 @@ int main()
 			case 1: InputRequest(reqArray, inputtedRequests); break;
 			case 2: DisplayDevices(reqArray, inputtedRequests); break;
 			case 3: SearchForRequest(reqArray, inputtedRequests); break;
-			case 4: /*sort by date*/break;
+			case 4: SortByDate(reqArray, inputtedRequests); break;
 			case 5: ImportAndExportBinaryFile(reqArray, inputtedRequests); break;
 			case 6: CompleteRequest(reqArray, inputtedRequests); break;
-			case 7: break;
+			case 7: AdditionalRequestInformation(reqArray, inputtedRequests); break;
+			case 8: system("cls"); PrintMenu(); break;
 			}
 		}
-	} while (command != 8);
+	} while (command != 9);
 	ImportAndExportBinaryFileAutomatically(reqArray, inputtedRequests, true);
 }
