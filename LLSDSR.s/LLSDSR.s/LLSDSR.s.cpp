@@ -160,36 +160,29 @@ void SelectionSort(Request arr[10]) {
 	}
 }
 
-void MergeSort(Request arr[10]) {
+
+void InsertionSort(Request arr[10]) {
 	int n = 10;
-	if (n < 2) return;
-	int mid = n / 2;
-	Request left[5];
-	Request right[5];
-	for (int i = 0; i < mid; ++i) {
-		left[i] = arr[i];
-	}
-	for (int i = mid; i < n; ++i) {
-		right[i - mid] = arr[i];
-	}
-	MergeSort(left);
-	MergeSort(right);
-	int i = 0, j = 0, k = 0;
-	while (i < mid && j < n - mid) {
-		int day1, month1, year1, day2, month2, year2;
-		sscanf_s(left[i].date, "%d-%d-%d", &day1, &month1, &year1);
-		sscanf_s(right[j].date, "%d-%d-%d", &day2, &month2, &year2);
-		if ((year1 < year2) ||
-			(year1 == year2 && month1 < month2) ||
-			(year1 == year2 && month1 == month2 && day1 < day2)) {
-			arr[k++] = left[i++];
+	for (int i = 1; i < n; ++i) {
+		Request key = arr[i];
+		int j = i - 1;
+		int dayKey, monthKey, yearKey, dayJ, monthJ, yearJ;
+		sscanf_s(key.date, "%d-%d-%d", &dayKey, &monthKey, &yearKey);
+
+		while (j >= 0) {
+			sscanf_s(arr[j].date, "%d-%d-%d", &dayJ, &monthJ, &yearJ);
+			if ((yearJ > yearKey) ||
+				(yearJ == yearKey && monthJ > monthKey) ||
+				(yearJ == yearKey && monthJ == monthKey && dayJ > dayKey)) {
+				arr[j + 1] = arr[j];
+				--j;
+			}
+			else {
+				break;
+			}
 		}
-		else {
-			arr[k++] = right[j++];
-		}
+		arr[j + 1] = key;
 	}
-	while (i < mid) arr[k++] = left[i++];
-	while (j < n - mid) arr[k++] = right[j++];
 }
 
 void CocktailShakerSort(Request arr[10]) {
@@ -479,36 +472,36 @@ void SortRequestsBySerialNumber(Node*& head) {
 	cout << "Requests sorted by serial number.\n";
 }
 
-Node* BinarySearchBySerialNumber(Node* head, const char* serialNumber) {  
-SortRequestsBySerialNumber(head);  
-Node* start = head;  
-Node* end = nullptr; 
+Node* BinarySearchBySerialNumber(Node* head, const char* serialNumber) {
+	SortRequestsBySerialNumber(head);
+	Node* start = head;
+	Node* end = nullptr;
 
-while (start != end) {  
-	Node* mid = GetMiddle(start, end);  
+	while (start != end) {
+		Node* mid = GetMiddle(start, end);
 
-	char midFirstChar = mid->data.serialNumber[0];  
-	char searchFirstChar = serialNumber[0];  
+		char midFirstChar = mid->data.serialNumber[0];
+		char searchFirstChar = serialNumber[0];
 
-	if (midFirstChar == searchFirstChar) {
-		if (strstr(mid->data.serialNumber, serialNumber)) {  
-			return mid;  
-		}  
-		else if (!strstr(mid->data.serialNumber, serialNumber)) {  
-			start = mid->next;  
-		}  
-		else {  
-			end = mid;  
-		}  
-	}  
-	else if (midFirstChar < searchFirstChar) {  
-		start = mid->next;  
-	}  
-	else {  
-		end = mid;  
-	}  
-}  
-return nullptr;  
+		if (midFirstChar == searchFirstChar) {
+			if (strstr(mid->data.serialNumber, serialNumber)) {
+				return mid;
+			}
+			else if (!strstr(mid->data.serialNumber, serialNumber)) {
+				start = mid->next;
+			}
+			else {
+				end = mid;
+			}
+		}
+		else if (midFirstChar < searchFirstChar) {
+			start = mid->next;
+		}
+		else {
+			end = mid;
+		}
+	}
+	return nullptr;
 }
 
 void SearchForRequest(Node* head) {
@@ -664,13 +657,17 @@ void SearchForRequest(Node* head) {
 }
 
 void AdditionalRequestInformation(Node* head) {
-	cout << "To displaying completed requests for certain technician (0). \n To display all requests with a certain issue for a certain device (1)\n: ";
+	cout << "To display completed requests for a certain technician (0).\n"
+		<< "To display all requests with a certain issue for a certain device (1)\n: ";
 	cin.ignore();
 	int command;
 	do {
 		cin >> command;
 		if (command > 1 || command < 0 || cin.fail()) {
-			cout << "Wrong Command. Please try again. To displaying completed requests for certain technician (0). \n To display all requests with a certain issue for a certain device (1)\n: ";
+			cout << "Wrong Command. Please try again. To display completed requests for a certain technician (0).\n"
+				<< "To display all requests with a certain issue for a certain device (1)\n: ";
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		}
 		else break;
 	} while (true);
@@ -682,7 +679,7 @@ void AdditionalRequestInformation(Node* head) {
 		cin.getline(searchDevice, MAX_STRING_LENGTH);
 		char searchIssue[MAX_STRING_LENGTH];
 		cout << "Enter an issue description substring to search for: ";
-		cin.ignore();
+		// No need to ignore again, getline is safe here
 		cin.getline(searchIssue, MAX_STRING_LENGTH);
 
 		Node* node = head;
@@ -691,19 +688,28 @@ void AdditionalRequestInformation(Node* head) {
 		while (node) {
 			if (strstr(node->data.deviceType, searchDevice) != nullptr &&
 				strstr(node->data.issueDescription, searchIssue) != nullptr) {
-				//print
+				AddRequest(filteredHead, node->data);
 				count++;
 			}
 			node = node->next;
 		}
-		SortRequestsByDeviceType(filteredHead);
+		if (filteredHead) {
+			SortRequestsByDeviceType(filteredHead);
+			DisplayRequests(filteredHead);
+		}
+		else {
+			cout << "No requests found matching the device and issue criteria.\n";
+		}
 		Request* first10 = GetFirst10Requests(head);
 		SelectionSort(first10);
 		for (int i = 0; i < 10; ++i) {
-			cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
-		};
+			if (first10[i].requestNumber != 0) {
+				cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
+			}
+		}
+		delete[] first10;
 
-		
+		// Free filtered list
 		while (filteredHead) {
 			Node* tmp = filteredHead;
 			filteredHead = filteredHead->next;
@@ -711,14 +717,19 @@ void AdditionalRequestInformation(Node* head) {
 		}
 	}
 	else if (command == 0) {
+		// Build a list of completed requests
 		Node* node = head;
 		Node* completedHead = nullptr;
 		while (node) {
 			if (node->data.status == COMPLETED) {
-				completedHead = node;
-				
+				AddRequest(completedHead, node->data);
 			}
 			node = node->next;
+		}
+
+		if (!completedHead) {
+			cout << "No completed requests found.\n";
+			return;
 		}
 
 		cout << "Technician Names for Completed Requests:" << endl;
@@ -737,18 +748,25 @@ void AdditionalRequestInformation(Node* head) {
 		node = completedHead;
 		while (node) {
 			if (strstr(node->data.technicianName, searchTechnician) != nullptr) {
-				filteredHead = node;
-				break;
+				AddRequest(filteredHead, node->data);
 			}
 			node = node->next;
 		}
-		SortRequestsByDate(filteredHead);
-		DisplayRequests(filteredHead);
+		if (filteredHead) {
+			SortRequestsByDate(filteredHead);
+			DisplayRequests(filteredHead);
+		}
+		else {
+			cout << "No completed requests found for the specified technician.\n";
+		}
 		Request* first10 = GetFirst10Requests(head);
-		MergeSort(first10);
+		InsertionSort(first10);
 		for (int i = 0; i < 10; ++i) {
-			cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
-		};
+			if (first10[i].requestNumber != 0) {
+				cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
+			}
+		}
+		delete[] first10;
 
 		// Free filtered/completed lists
 		while (completedHead) {
@@ -868,14 +886,16 @@ int main() {
 			case 1: InputRequest(head, nextRequestNumber); break;
 			case 2: DisplayRequests(head); break;
 			case 3: SearchForRequest(head); break;
-			case 4: 
-				SortRequestsByDate(head); 
-				DisplayRequests(head); 
+			case 4:
+				SortRequestsByDate(head);
+				DisplayRequests(head);
 				first10 = GetFirst10Requests(head);
 				CocktailShakerSort(first10);
 				for (int i = 0; i < 10; ++i) {
-					cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
-				} break;
+					if (first10[i].requestNumber != 0) {
+						cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
+					}
+				}; break;
 
 			case 5: ImportAndExportBinaryFile(head, nextRequestNumber); break;
 			case 6: CompleteRequest(head); break;
