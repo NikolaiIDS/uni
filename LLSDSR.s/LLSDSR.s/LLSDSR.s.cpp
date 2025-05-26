@@ -73,13 +73,19 @@ Node* GetMiddle(Node* start, Node* end) {
 }
 
 Request* GetFirst10Requests(Node* head) {
-	static Request arr[10]; 
+	Request* arr = new Request[10];
 	int count = 0;
 	Node* curr = head;
+
 	while (curr && count < 10) {
 		arr[count++] = curr->data;
 		curr = curr->next;
 	}
+
+	for (int i = count; i < 10; ++i) {
+		arr[i] = Request();
+	}
+
 	return arr;
 }
 
@@ -453,23 +459,56 @@ void CompleteRequest(Node* head) {
 	cout << "Request number " << requestNumber << " not found." << endl;
 }
 
-Node* BinarySearchBySerialNumber(Node* head, const char* serialNumber) {
-	Node* start = head;
-	Node* end = nullptr;
-	while (start != end) {
-		Node* mid = GetMiddle(start, end);
-		if (strstr(mid->data.serialNumber, serialNumber) != nullptr) {
-			return mid;
+void SortRequestsBySerialNumber(Node*& head) {
+	if (!head || !head->next) return;
+
+	bool swapped;
+	do {
+		swapped = false;
+		Node* curr = head;
+
+		while (curr->next) {
+			if (strcmp(curr->data.serialNumber, curr->next->data.serialNumber) > 0) {
+				swap(curr->data, curr->next->data);
+				swapped = true;
+			}
+			curr = curr->next;
 		}
-		int cmp = strcmp(mid->data.serialNumber, serialNumber);
-		if (cmp < 0) {
-			start = mid->next;
-		}
-		else {
-			end = mid;
-		}
-	}
-	return nullptr;
+	} while (swapped);
+
+	cout << "Requests sorted by serial number.\n";
+}
+
+Node* BinarySearchBySerialNumber(Node* head, const char* serialNumber) {  
+SortRequestsBySerialNumber(head);  
+Node* start = head;  
+Node* end = nullptr; 
+
+while (start != end) {  
+	Node* mid = GetMiddle(start, end);  
+
+	char midFirstChar = mid->data.serialNumber[0];  
+	char searchFirstChar = serialNumber[0];  
+
+	if (midFirstChar == searchFirstChar) {
+		if (strstr(mid->data.serialNumber, serialNumber)) {  
+			return mid;  
+		}  
+		else if (!strstr(mid->data.serialNumber, serialNumber)) {  
+			start = mid->next;  
+		}  
+		else {  
+			end = mid;  
+		}  
+	}  
+	else if (midFirstChar < searchFirstChar) {  
+		start = mid->next;  
+	}  
+	else {  
+		end = mid;  
+	}  
+}  
+return nullptr;  
 }
 
 void SearchForRequest(Node* head) {
@@ -480,8 +519,8 @@ void SearchForRequest(Node* head) {
 	bool fine = false;
 	do {
 		cin >> searchType;
-		if (searchType < 0 || searchType > 1) {
-			cout << "Wrong input! Try Again: (0 for device type, 1 for request status): ";
+		if (searchType < 0 || searchType > 2) {
+			cout << "Wrong input! Try Again: (0 for device type, 1 for request status, 2 for serial number): ";
 			cin.ignore();
 		}
 		else fine = true;
@@ -581,16 +620,13 @@ void SearchForRequest(Node* head) {
 			cout << "No devices found matching the search criteria." << endl;
 		}
 	}
-	else if (searchType == 2) {
+	else {
 		char searchString[MAX_STRING_LENGTH];
 		cout << "Enter the serial number or substring to search for: ";
 		cin.ignore();
 		cin.getline(searchString, MAX_STRING_LENGTH);
 
-		SortRequestsByDeviceType(head);
-
 		Node* found = BinarySearchBySerialNumber(head, searchString);
-
 
 		if (found) {
 			cout << "Matching requests:\n";
@@ -655,13 +691,12 @@ void AdditionalRequestInformation(Node* head) {
 		while (node) {
 			if (strstr(node->data.deviceType, searchDevice) != nullptr &&
 				strstr(node->data.issueDescription, searchIssue) != nullptr) {
-				AddRequest(filteredHead, node->data);
+				//print
 				count++;
 			}
 			node = node->next;
 		}
 		SortRequestsByDeviceType(filteredHead);
-		DisplayRequests(filteredHead);
 		Request* first10 = GetFirst10Requests(head);
 		SelectionSort(first10);
 		for (int i = 0; i < 10; ++i) {
@@ -680,7 +715,8 @@ void AdditionalRequestInformation(Node* head) {
 		Node* completedHead = nullptr;
 		while (node) {
 			if (node->data.status == COMPLETED) {
-				AddRequest(completedHead, node->data);
+				completedHead = node;
+				
 			}
 			node = node->next;
 		}
@@ -701,7 +737,8 @@ void AdditionalRequestInformation(Node* head) {
 		node = completedHead;
 		while (node) {
 			if (strstr(node->data.technicianName, searchTechnician) != nullptr) {
-				AddRequest(filteredHead, node->data);
+				filteredHead = node;
+				break;
 			}
 			node = node->next;
 		}
@@ -822,7 +859,7 @@ int main() {
 	int command;
 	do {
 		command = InputCommand(command);
-
+		Request* first10 = new Request;
 		if (command < 1 || command > 9 || cin.fail()) {
 			cout << "Wrong command!" << endl;
 		}
@@ -834,7 +871,7 @@ int main() {
 			case 4: 
 				SortRequestsByDate(head); 
 				DisplayRequests(head); 
-				Request* first10 = GetFirst10Requests(head);
+				first10 = GetFirst10Requests(head);
 				CocktailShakerSort(first10);
 				for (int i = 0; i < 10; ++i) {
 					cout << "Request #" << first10[i].requestNumber << " - " << first10[i].date << endl;
@@ -849,7 +886,6 @@ int main() {
 	} while (command != 9);
 	ExportBinaryFile(head, "requestsPermanent.dat");
 
-	// Free memory
 	while (head) {
 		Node* tmp = head;
 		head = head->next;
