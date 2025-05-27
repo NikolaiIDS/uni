@@ -50,8 +50,6 @@ const char issueDescriptions[10][MAX_STRING_LENGTH] = {
 	"Network issue", "Slow performance", "No power", "Sound issue", "Keyboard malfunction"
 };
 
-// Linked List Operations
-
 Node* GetLast(Node* head) {
 	if (!head) return nullptr;
 	while (head->next) {
@@ -102,7 +100,11 @@ void AddRequest(Node*& head, const Request& req) {
 	cout << "Request added successfully!\n";
 }
 
-bool DeleteRequest(Node*& head, int requestNumber) {
+bool DeleteRequest(Node*& head) {
+	cout << "Please input request number: ";
+	int requestNumber;
+	cin.ignore();
+	cin >> requestNumber;
 	Node* temp = head;
 	Node* prev = nullptr;
 	while (temp && temp->data.requestNumber != requestNumber) {
@@ -298,8 +300,6 @@ void DisplayRequests(Node* head) {
 		head = head->next;
 	}
 }
-
-// User Interaction Functions
 
 void InputRequest(Node*& head, int& nextRequestNumber) {
 	int n = 0;
@@ -679,7 +679,6 @@ void AdditionalRequestInformation(Node* head) {
 		cin.getline(searchDevice, MAX_STRING_LENGTH);
 		char searchIssue[MAX_STRING_LENGTH];
 		cout << "Enter an issue description substring to search for: ";
-		// No need to ignore again, getline is safe here
 		cin.getline(searchIssue, MAX_STRING_LENGTH);
 
 		Node* node = head;
@@ -709,7 +708,6 @@ void AdditionalRequestInformation(Node* head) {
 		}
 		delete[] first10;
 
-		// Free filtered list
 		while (filteredHead) {
 			Node* tmp = filteredHead;
 			filteredHead = filteredHead->next;
@@ -717,7 +715,6 @@ void AdditionalRequestInformation(Node* head) {
 		}
 	}
 	else if (command == 0) {
-		// Build a list of completed requests
 		Node* node = head;
 		Node* completedHead = nullptr;
 		while (node) {
@@ -768,7 +765,6 @@ void AdditionalRequestInformation(Node* head) {
 		}
 		delete[] first10;
 
-		// Free filtered/completed lists
 		while (completedHead) {
 			Node* tmp = completedHead;
 			completedHead = completedHead->next;
@@ -781,8 +777,6 @@ void AdditionalRequestInformation(Node* head) {
 		}
 	}
 }
-
-// File I/O for Linked List
 
 void ImportBinaryFile(Node*& head, int& nextRequestNumber, const char* filename) {
 	ifstream input_file(filename, ios::binary | ios::ate);
@@ -832,19 +826,20 @@ void ExportBinaryFile(Node* head, const char* filename) {
 void PrintMenu() {
 	cout << "----------------------------------" << endl;
 	cout << "1: New request." << endl;
-	cout << "2: Display all devices." << endl;
-	cout << "3: Search for device." << endl;
-	cout << "4: Sort and display requests." << endl;
-	cout << "5: External files." << endl;
-	cout << "6: Complete request." << endl;
-	cout << "7: Additional request information." << endl;
-	cout << "8: Clear console." << endl;
-	cout << "9: Exit." << endl;
+	cout << "2: Delete request." << endl;
+	cout << "3: Display all devices." << endl;
+	cout << "4: Search for device." << endl;
+	cout << "5: Sort and display requests." << endl;
+	cout << "6: External files." << endl;
+	cout << "7: Complete request." << endl;
+	cout << "8: Additional request information." << endl;
+	cout << "9: Clear console." << endl;
+	cout << "10: Exit." << endl;
 	cout << "----------------------------------" << endl;
 }
 
 int InputCommand(int& c) {
-	cout << "Please input command from 1 to 9." << endl;
+	cout << "Please input command from 1 to 10." << endl;
 	cin >> c;
 	return c;
 }
@@ -878,15 +873,16 @@ int main() {
 	do {
 		command = InputCommand(command);
 		Request* first10 = new Request;
-		if (command < 1 || command > 9 || cin.fail()) {
+		if (command < 1 || command > 10 || cin.fail()) {
 			cout << "Wrong command!" << endl;
 		}
 		else {
 			switch (command) {
 			case 1: InputRequest(head, nextRequestNumber); break;
-			case 2: DisplayRequests(head); break;
-			case 3: SearchForRequest(head); break;
-			case 4:
+			case 2: DeleteRequest(head); break;
+			case 3: DisplayRequests(head); break;
+			case 4: SearchForRequest(head); break;
+			case 5:
 				SortRequestsByDate(head);
 				DisplayRequests(head);
 				first10 = GetFirst10Requests(head);
@@ -897,13 +893,14 @@ int main() {
 					}
 				}; break;
 
-			case 5: ImportAndExportBinaryFile(head, nextRequestNumber); break;
-			case 6: CompleteRequest(head); break;
-			case 7: AdditionalRequestInformation(head); break;
-			case 8: system("cls"); PrintMenu(); break;
+			case 6: ImportAndExportBinaryFile(head, nextRequestNumber); break;
+			case 7: CompleteRequest(head); break;
+			case 8: AdditionalRequestInformation(head); break;
+			case 9: system("cls"); PrintMenu(); break;
+			
 			}
 		}
-	} while (command != 9);
+	} while (command != 10);
 	ExportBinaryFile(head, "requestsPermanent.dat");
 
 	while (head) {
