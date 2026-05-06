@@ -1,16 +1,41 @@
 import os
-# Добавяне на локалния път към Graphviz
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(SCRIPT_DIR)
-graphviz_path = os.path.join(BASE_DIR, "graphviz", "Graphviz-14.1.5-win32", "bin")
-os.environ["PATH"] += os.pathsep + graphviz_path
-
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import shutil
+
+# Опит за намиране на Graphviz
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+
+def setup_graphviz():
+    # 1. Проверка дали вече е в PATH
+    if shutil.which("dot"):
+        return True
+    
+    # 2. Проверка в локалната папка на проекта
+    local_graphviz_bin = os.path.join(BASE_DIR, "graphviz", "Graphviz-14.1.5-win32", "bin")
+    if os.path.exists(os.path.join(local_graphviz_bin, "dot.exe")):
+        os.environ["PATH"] += os.pathsep + local_graphviz_bin
+        return True
+    
+    # 3. Общи пътища в Windows
+    common_paths = [
+        r"C:\Program Files\Graphviz\bin",
+        r"C:\Program Files (x86)\Graphviz\bin",
+        os.path.expandvars(r"%LOCALAPPDATA%\bin")
+    ]
+    for path in common_paths:
+        if os.path.exists(os.path.join(path, "dot.exe")):
+            os.environ["PATH"] += os.pathsep + path
+            return True
+            
+    return False
+
+HAS_GRAPHVIZ = setup_graphviz()
 
 # Пътища
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'apartments.csv')
@@ -60,12 +85,16 @@ plt.savefig(os.path.join(REPORT_DIR, "apartment_regression.png"))
 
 # 6. Визуализация на случайно избрано дърво (напр. №42)
 print("\nВизуализация на случайно избрано дърво от XGBoost (№42)...")
-try:
-    plt.figure(figsize=(25, 15))
-    xgb.plot_tree(regr, tree_idx=42, ax=plt.gca())
-    plt.title("Визуализация на случайно дърво от XGBoost (Дърво №42)")
-    plt.savefig(os.path.join(REPORT_DIR, "xgboost_random_tree.png"), bbox_inches='tight', dpi=300)
-    print("Графиката на XGBoost дървото е запазена.")
-except Exception as e:
-    print(f"Грешка при визуализация на XGBoost дърво: {e}")
+if HAS_GRAPHVIZ:
+    try:
+        plt.figure(figsize=(25, 15))
+        xgb.plot_tree(regr, tree_idx=42, ax=plt.gca())
+        plt.title("Визуализация на случайно дърво от XGBoost (Дърво №42)")
+        plt.savefig(os.path.join(REPORT_DIR, "xgboost_random_tree.png"), bbox_inches='tight', dpi=300)
+        print("Графиката на XGBoost дървото е запазена.")
+    except Exception as e:
+        print(f"Грешка при визуализация на XGBoost дърво: {e}")
+else:
+    print("Грешка: Не е намерен Graphviz (dot.exe). Визуализацията на XGBoost дървото е пропусната.")
+    print("Моля, инсталирайте Graphviz от https://graphviz.org/download/ и добавете 'bin' папката към системния PATH.")
 plt.show() # Премахнато за автоматично изпълнение без прозорци
